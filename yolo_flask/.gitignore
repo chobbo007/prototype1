@@ -1,0 +1,4 @@
+venv/
+uploads/
+outputs/
+*.pt
