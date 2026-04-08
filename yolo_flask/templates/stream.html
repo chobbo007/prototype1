@@ -1,8 +1,121 @@
+<!DOCTYPE html>
 <html>
-<body>
-<h2>실시간 YOLO 분석</h2>
+<head>
+    <title>축구 전술 분석 시스템 - Batch Mode</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .main-layout { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        
+        .section { width: 80%; max-width: 1000px; background: #2c3e50; padding: 20px; border-radius: 10px; text-align: center; }
+        video { width: 100%; border-radius: 5px; background: #000; }
+        
+        /* 프로그레스바 스타일 */
+        #progressContainer { display: none; margin: 20px 0; width: 100%; background: #444; border-radius: 10px; }
+        #progressBar { width: 0%; height: 20px; background: #3498db; border-radius: 10px; transition: width 0.3s; }
+        
+        .controls { margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; }
+        input[type="number"] { width: 70px; padding: 8px; border-radius: 4px; border: none; }
+        button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-analyze { background: #e74c3c; color: white; }
+        .btn-skip { background: #34495e; color: white; }
 
-<img src="/video_feed">
+        #resultArea { display: none; margin-top: 30px; }
+        .status-text { margin-bottom: 10px; font-size: 1.2em; color: #3498db; }
+    </style>
+</head>
+<body>
+
+<div class="main-layout">
+    <h1>AI Soccer Tactical Analyzer (Batch)</h1>
+
+    <div class="section">
+        <h3>1. 원본 영상 구간 선택</h3>
+        <video id="mainVideo" controls>
+            <source src="{{ url_for('uploaded_file', filename=filename) }}" type="video/mp4">
+        </video>
+        
+        <div class="controls">
+            <button class="btn-skip" onclick="skip(-5)">-5초</button>
+            <button class="btn-skip" onclick="skip(5)">+5초</button>
+            | 시작: <input type="number" id="startTime" value="0" step="0.1"> 초
+            종료: <input type="number" id="endTime" value="10" step="0.1"> 초
+            <button class="btn-analyze" id="startBtn" onclick="startAnalysis()">고화질 분석 추출 시작</button>
+        </div>
+
+        <div id="progressContainer">
+            <div class="status-text" id="statusMsg">서버에서 분석 준비 중...</div>
+            <div style="background: #444; border-radius: 10px; overflow: hidden;">
+                <div id="progressBar"></div>
+            </div>
+            <p id="progressPercent">0%</p>
+        </div>
+    </div>
+
+    <div id="resultArea" class="section">
+        <h3 style="color: #2ecc71;">2. 분석 완료! 결과 영상</h3>
+        <video id="resultVideo" controls autoplay muted>
+            <source id="resultSource" src="" type="video/mp4">
+        </video>
+        <p>파일 저장 위치: <code>static/result_video.mp4</code></p>
+    </div>
+    
+    <a href="/" style="color: #3498db; margin-top: 20px;">새 영상 업로드</a>
+</div>
+
+<script>
+    const video = document.getElementById('mainVideo');
+    const startInput = document.getElementById('startTime');
+    const endInput = document.getElementById('endTime');
+    const startBtn = document.getElementById('startBtn');
+
+    function skip(value) { video.currentTime += value; }
+
+    function startAnalysis() {
+        const start = startInput.value;
+        const end = endInput.value;
+        const filename = "{{ filename }}";
+
+        // UI 업데이트
+        startBtn.disabled = true;
+        document.getElementById('progressContainer').style.display = 'block';
+        document.getElementById('resultArea').style.display = 'none';
+
+        // 서버에 분석 요청 (비동기)
+        fetch(`/start_analysis?filename=${filename}&start=${start}&end=${end}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === "started") {
+                    // 1초마다 상태 체크 시작
+                    checkInterval = setInterval(updateStatus, 1000);
+                }
+            });
+    }
+
+    function updateStatus() {
+        fetch('/check_status')
+            .then(response => response.json())
+            .then(data => {
+                const percent = data.progress;
+                document.getElementById('progressBar').style.width = percent + '%';
+                document.getElementById('progressPercent').innerText = percent + '%';
+                document.getElementById('statusMsg').innerText = "AI 분석 및 영상 추출 중...";
+
+                if (data.complete) {
+                    clearInterval(checkInterval);
+                    showResult(data.filename);
+                }
+            });
+    }
+
+    function showResult(resultFilename) {
+        document.getElementById('statusMsg').innerText = "분석 완료!";
+        document.getElementById('resultArea').style.display = 'block';
+        // 캐시 방지를 위해 timestamp 추가
+        document.getElementById('resultSource').src = `/static/${resultFilename}?t=${new Date().getTime()}`;
+        document.getElementById('resultVideo').load();
+        startBtn.disabled = false;
+    }
+</script>
 
 </body>
 </html>

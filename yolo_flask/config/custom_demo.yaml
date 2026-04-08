@@ -1,0 +1,6 @@
+# config/custom_demo.yaml 예시
+weights_kp: "weights/SV_kp.pth"
+weights_line: "weights/SV_lines.pth"
+pnl_refine: True
+input_type: "video" # 또는 "image"
+display: True

@@ -1,4 +1,15 @@
 venv/
+__pycache__/
+.vscode/
+
+*.pt
+weights/
+model/*.onnx
+
 uploads/
 outputs/
-*.pt
+static/*.mp4
+static/*.avi
+reference_pitch.png
+
+.DS_Store
