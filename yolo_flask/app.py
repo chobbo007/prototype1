@@ -28,10 +28,13 @@ from sklearn.cluster import KMeans
 
 from matplotlib import rc
 
-# PlayerBallAssigner 인스턴스화
+# PlayerBallAssigner, tacticalConvexProcess 인스턴스화
 from player_ball_assigner import PlayerBallAssigner
 from tacticalConvexProcessor import TacticalConvexProcessor
 ball_assigner = PlayerBallAssigner()
+
+# 선수 track 스탯
+from playerTrackerStats import PlayerTrackerStats
 
 # Windows의 맑은 고딕 설정
 plt.rcParams['font.family'] = 'Malgun Gothic'
@@ -517,6 +520,9 @@ def run_analysis_batch(filename, start_t, end_t):
     #[추가] 전술 면적 및 변화율 분석 엔진 활성화
     tactical_visualizer = TacticalConvexProcessor(STATIC_FOLDER, fps, total_to_process)
 
+    #[추가] 선수별 속도 및 이동거리 분석기 인스턴스화
+    physical_tracker = PlayerTrackerStats(fps=fps)
+
     team_model, player_colors, track_history = None, [], {}
     player_ocr_results, latest_H = {}, None
     formation_text = {0: "Waiting...", 1: "Waiting..."}
@@ -647,7 +653,7 @@ def run_analysis_batch(filename, start_t, end_t):
                     'label': label,
                     'px': px, 'py': py, 
                     'rx_real': rx_real, 'ry_real': ry_real,
-                    'rx1': rx1, 'rx2': rx2, 'ry2': ry2
+                    'rx1': rx1, 'rx2': rx2, 'ry1': ry1 ,'ry2': ry2
                 })
 
             # --- [수정 핵심 Step 2] 실시간 볼 점유 플레이어 판별 추적 ---
@@ -679,6 +685,18 @@ def run_analysis_batch(filename, start_t, end_t):
                     label = obj['label']
                     p_color = (0,0,255) if label==0 else (255,0,0) if label==1 else (200,200,200)
                     
+                    # 미니맵 및 전술 포메이션 연결용 포인트 기록 / px,py는 pnlcalib 호모그래피 통과한 좌표 값
+                    px, py = obj['px'], obj['py']
+
+                    #[추가] 호출해서 실시간 속도와 누적거리 획득
+                    speed_kmh, total_dist = physical_tracker.update_player(obj['track_id'], px, py, current_f)
+
+                    #[추가] 메인 영상 선수 머리위에 스텟 바인딩
+                    cv2.putText(combined_view, f"{speed_kmh:.1f} km/h", (int(obj['rx1']), int(obj['ry1']) - 25),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1, cv2.LINE_AA)
+                    cv2.putText(combined_view, f"{total_dist:.1f} m", (int(obj['rx1']), int(obj['ry1']) - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+
                     # 🌟 공 소유자 전용 시각화 로직 연결!
                     if obj['track_id'] == assigned_player_id:
                         # 볼 소유 플레이어는 발밑 링을 황금색(민트색 등)으로 강조 표시하고 머리 위 역삼각형 마커 추가
@@ -799,6 +817,14 @@ def run_analysis_batch(filename, start_t, end_t):
         print(f"❌ [에러] 텍스트 리포트 파일 쓰기 실패: {e}")
     #===========================================
 
+    # [추가] 저장 완료된 텍스트 보고서 파일의 하단에 피지컬 분석 스니펫을 추가
+    try:
+        with open(txt_report_path, "a", encoding="utf-8") as f:
+            f.write(physical_tracker.generate_final_report_snippet())
+        print(f"✅ [성공] 피지컬 데이터 요약본 전술 리포트 통합 완료")
+    except Exception as e:
+        print(f"❌ [에러] 피지컬 리포트 추가 실패: {e}")
+
 
     # 3. 최종 상태 업데이트
     #보로노이 최종 리포트 생성
@@ -837,6 +863,11 @@ def run_analysis_batch(filename, start_t, end_t):
     analysis_status["report_img"] = f"report_{filename}.png"
     analysis_status["insight_text"] = ai_commentary
     
+    #웹 UI 프론트엔드 및 Flask API에서 자유롭게 꺼내 쓸수 있도록 가공된 원본 메모리 바인딩
+    analysis_status["player_physical_records"] = {
+        int(k): v for k, v in physical_tracker.player_memory.items()
+    }
+
     #=== [추가] 모듈화된것 포메이션 유지율 한번만 호출 ====
     convex_processor = TacticalConvexProcessor(STATIC_FOLDER, fps, total_to_process)
     g_file, v_file = convex_processor.process(full_coords_history, transform_to_minimap, create_fifa_pitch)
