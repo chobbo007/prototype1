@@ -30,7 +30,7 @@ from matplotlib import rc
 
 # PlayerBallAssigner 인스턴스화
 from player_ball_assigner import PlayerBallAssigner
-from yolo_flask import TacticalConvexProcessor
+from tacticalConvexProcessor import TacticalConvexProcessor
 ball_assigner = PlayerBallAssigner()
 
 # Windows의 맑은 고딕 설정
@@ -515,14 +515,14 @@ def run_analysis_batch(filename, start_t, end_t):
     pitch_bg = create_fifa_pitch()
     
     #[추가] 전술 면적 및 변화율 분석 엔진 활성화
-    tactical_visualizer = TacticalConvexProcessor(STATIC_FOLDER)
+    tactical_visualizer = TacticalConvexProcessor(STATIC_FOLDER, fps, total_to_process)
 
     team_model, player_colors, track_history = None, [], {}
     player_ocr_results, latest_H = {}, None
     formation_text = {0: "Waiting...", 1: "Waiting..."}
     
     # 포메이션 라인 유지율 트래커 인스턴스
-    area_tracker = TacticalConvexProcessor()
+    area_tracker = TacticalConvexProcessor(STATIC_FOLDER, fps, total_to_process)
     #초당 분석 통꼐 저장을 위한 데이터프레임 구조용 리스트
     per_second_stats = []
 
