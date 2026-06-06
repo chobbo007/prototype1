@@ -31,7 +31,7 @@
     <div class="section">
         <h3>1. 원본 영상 구간 선택</h3>
         <video id="mainVideo" controls>
-            <source src="{{ url_for('uploaded_file', filename=filename) }}" type="video/mp4">
+            <source src="/uploaded_file/{{ filename }}" type="video/mp4">
         </video>
         
         <div class="controls">
