@@ -461,7 +461,7 @@ def generate_ai_tactical_report(stats):
 
     try:
         #api 설정
-        genai.configure(api_key="AIzaSyCcAhtYfinFkYgBdEx1_I5h0b4tiOGAM3M")
+        genai.configure(api_key="")
         
         #모델설정
         model = genai.GenerativeModel('gemini-2.5-flash')
