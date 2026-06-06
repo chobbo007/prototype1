@@ -1,0 +1,16 @@
+names:
+- ball
+- goalkeeper
+- player
+- referee
+nc: 4
+path: "c:\\Users\\kimwc\\Desktop\\upload - \uBCF5\uC0AC\uBCF8\\yolo_flask\\football-players-detection-14"
+roboflow:
+  license: CC BY 4.0
+  project: football-players-detection-3zvbc
+  url: https://universe.roboflow.com/roboflow-jvuqo/football-players-detection-3zvbc/dataset/14
+  version: 14
+  workspace: roboflow-jvuqo
+test: test/images
+train: train/images
+val: valid/images
