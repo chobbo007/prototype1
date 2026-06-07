@@ -1,17 +1,27 @@
 venv/
 __pycache__/
 .vscode/
+.DS_Store
 
+# 딥러닝 모델 파일 (용량이 크고 push 불필요)
 *.pt
 weights/
 model/*.onnx
+**/weights/
+**/model/
 
 uploads/
 outputs/
+
+# 🔥 static 폴더 내 모든 휘발성 분석 결과물 제외 (구조는 유지하되 내용물만 방어)
 static/*.mp4
 static/*.avi
+static/*.png
+static/*.jpg
+static/*.txt
+static/*.csv
 reference_pitch.png
 
 .env
 
-.DS_Store
+/*.pt

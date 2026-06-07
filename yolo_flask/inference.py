@@ -18,6 +18,17 @@ from utils.utils_calib import FramebyFrameCalib, pan_tilt_roll_to_orientation
 from utils.utils_heatmap import get_keypoints_from_heatmap_batch_maxpool, get_keypoints_from_heatmap_batch_maxpool_l, \
     complete_keypoints, coords_to_dict
 
+import sys
+import os
+
+# 현재 파일(inference.py)이 있는 디렉토리를 구합니다.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 루트 디렉토리(/app)를 구합니다.
+root_dir = os.path.abspath(os.path.join(current_dir, "."))
+
+# 파이썬 탐색 경로의 맨 앞에 루트 디렉토리를 주입합니다.
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
 lines_coords = [[[0., 54.16, 0.], [16.5, 54.16, 0.]],
                 [[16.5, 13.84, 0.], [16.5, 54.16, 0.]],

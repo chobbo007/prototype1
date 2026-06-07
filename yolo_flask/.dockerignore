@@ -1,0 +1,35 @@
+# 1. 가상환경 및 캐시 파일
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# 2. 소스 제어 및 에디터 설정 파일
+.git/
+.gitignore
+.dockerignore
+.vscode/
+.idea/
+.DS_Store
+
+# 3. 로컬 테스트용 무거운 미디어 및 결과물 폴더 (YOLO runs 포함)
+*.mp4
+*.avi
+*.mkv
+outputs/
+runs/
+static/report_match_video.mp4.txt
+
+# 4. 딥러닝 가중치 파일 및 학습 폴더 (도커 이미지 용량 폭발 방지)
+*.pt
+*.onnx
+football-players-detection*/
+
+# 5. 프로 개발자 스타일 key 유출 막기
+.env
+
+!utils/
+!weights/
