@@ -1,3 +1,85 @@
+import numpy as np
+
+class PlayerTrackerStats:
+    def __init__(self, fps=30, window_size=5):
+        self.fps = fps
+        self.window_size = window_size
+        # 선수별 상태 저장 공간
+        self.player_memory = {} 
+        # 구조: { track_id: { 'pos_history': [(f, x, y)], 'total_dist': 0.0, 'last_speed': 0.0 } }
+
+    def update_player(self, track_id, rx_real, ry_real, current_frame):
+        # 1. 처음 발견된 선수라면 초기화
+        if track_id not in self.player_memory:
+            self.player_memory[track_id] = {
+                'pos_history': [(current_frame, rx_real, ry_real)],
+                'total_dist': 0.0,
+                'last_speed': 0.0
+            }
+            return 0.0, 0.0
+
+        player_data = self.player_memory[track_id]
+        history = player_data['pos_history']
+
+        # 현재 프레임 좌표 추가
+        history.append((current_frame, rx_real, ry_real))
+
+        # 2. 윈도우 크기(예: 5프레임)가 채워졌을 때 속도 계산
+        if len(history) >= self.window_size:
+            start_f, start_x, start_y = history[0]
+            end_f, end_x, end_y = history[-1]
+
+            # 두 평면 좌표(미터 단위) 사이의 유클리드 거리 계산
+            distance_covered = np.sqrt((end_x - start_x)**2 + (end_y - start_y)**2)
+            
+            # 시간 변화량 (초 단위)
+            time_elapsed = (end_f - start_f) / self.fps
+
+            if time_elapsed > 0:
+                speed_mps = distance_covered / time_elapsed
+                speed_kmh = speed_mps * 3.6
+                
+                # 🌟 [치명적 오류 방지] 인간 한계 속도(45km/h) 초과 시 노이즈로 판단 및 필터링
+                if speed_kmh > 45.0:
+                    speed_kmh = player_data['last_speed'] # 이전 속도 유지
+                    distance_covered = 0.0 # 누적 거리에서 제외
+                else:
+                    player_data['last_speed'] = speed_kmh
+                    # 윈도우 간격만큼 이동한 거리를 전체 활동량에 누적
+                    player_data['total_dist'] += distance_covered
+
+            # 다음 계산을 위해 가장 오래된 기록 제거 (슬라이딩 윈도우)
+            history.pop(0)
+        else:
+            # 윈도우 데이터가 덜 쌓인 초기 상태
+            speed_kmh = player_data['last_speed']
+
+        return speed_kmh, player_data['total_dist']
+    
+    def generate_final_report_snippet(self):
+        """ 경기 종료 후 최고 속도자 및 최다 활동량 선수를 추출하는 텍스트 스니펫 생성 """
+        if not self.player_memory:
+            return "수집된 피지컬 데이터가 없습니다."
+            
+        report = "\n[피지컬 데이터 분석 분석 리포트]\n"
+        max_speed = -1
+        max_speed_player = None
+        max_dist = -1
+        max_dist_player = None
+        
+        for tid, data in self.player_memory.items():
+            if data["last_speed"] > max_speed:
+                max_speed = data["last_speed"]
+                max_speed_player = tid
+            if data["total_dist"] > max_dist:
+                max_dist = data["total_dist"]
+                max_dist_player = tid
+                
+        report += f" - 최고 스프린트 속도 보유자: Player {max_speed_player} ({max_speed:.1f} km/h)\n"
+        report += f" - 최다 활동량(누적 거리) 보유자: Player {max_dist_player} ({max_dist:.1f} m)\n"
+        return report
+
+'''
 # PlayerTrackerStats.py
 import numpy as np
 
@@ -77,3 +159,4 @@ class PlayerTrackerStats:
         report += f" - 최고 스프린트 속도 보유자: Player {max_speed_player} ({max_speed:.1f} km/h)\n"
         report += f" - 최다 활동량(누적 거리) 보유자: Player {max_dist_player} ({max_dist:.1f} m)\n"
         return report
+        '''

@@ -12,4 +12,6 @@ static/*.mp4
 static/*.avi
 reference_pitch.png
 
+.env
+
 .DS_Store
